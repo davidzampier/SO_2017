@@ -5,34 +5,32 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-static void pesquisa(const char *arg)
-{
+static int pesquisa(const char *arg, const char *caminho){
     DIR *dirpont, *dirptraux;
     struct dirent *dp, *listDir;
-    int ePasta = 0;
+    char *proximo;
 
-    if ((dirpont = opendir( "." )) == NULL) {
-        perror( "nao pode abrir '.'\n\n" );
-        return;
+    if ((dirpont = opendir(caminho)) == NULL) {
+        (void) printf( "nao pode abrir %s \n\n", caminho);
+        return 0;
     }
-
     do {
         errno = 0;
         if ((dp = readdir(dirpont)) != NULL) {
             if (strcmp(dp->d_name, arg) == 0){
-              (void) printf("achou: %s(%d)\n", dp->d_name, dp->d_type);
+              (void) printf("Achou: %s | Caminho: %s/%s\n", dp->d_name, caminho, dp->d_name);
               (void) closedir(dirpont);
-              return;
+              return 1;
             }else{
-              if(dp->d_type == 4){
-                ePasta = 1;
-              else ePasta = 0;
-              while(ePasta){
-                if((dirptraux = opendir(dp->d_name)) != NULL){
-                  if((listDir = readdir(dirptraux)) != NULL){
-
-                  }
+              if(dp->d_type == 4 && strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0){
+                proximo = (char *)malloc(strlen(caminho)+strlen(dp->d_name)+2); //Caminho para proxima pasta
+                strcat(proximo, caminho);
+                strcat(proximo,"/");
+                strcat(proximo,dp->d_name);
+                if(pesquisa(arg, proximo) == 1){
+                  return 1;
                 }
               }
             }
@@ -44,7 +42,7 @@ static void pesquisa(const char *arg)
     else
         (void) printf("Falha ao procurar: %s\n", arg);
     (void) closedir(dirpont);
-    return;
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -56,7 +54,7 @@ int main(int argc, char *argv[])
        return( -1 );
     }
     for (i = 1; i < argc; i++){
-        pesquisa( argv[i] );
+        pesquisa(argv[i], ".");
     }
     return (0);
 }
