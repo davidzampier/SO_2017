@@ -6,21 +6,36 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 static int pesquisa(const char *arg, const char *caminho){
     DIR *dirpont, *dirptraux;
     struct dirent *dp, *listDir;
     char *proximo;
+    struct stat filestat;
 
     if ((dirpont = opendir(caminho)) == NULL) {
-        (void) printf( "nao pode abrir %s \n\n", caminho);
+        (void) printf( "Nao pode abrir %s \n\n", caminho);
         return 0;
     }
+    (void) printf("\nProcurando...");
     do {
         errno = 0;
         if ((dp = readdir(dirpont)) != NULL) {
             if (strcmp(dp->d_name, arg) == 0){
-              (void) printf("Achou: %s | Caminho: %s/%s\n", dp->d_name, caminho, dp->d_name);
+              (void) printf("\n\n'%s' encontrado \nCaminho: %s/%s\n", dp->d_name, caminho, dp->d_name);
+              (void) printf("\nInformações: ");
+              if((dp->d_type & DT_DIR) == DT_DIR)
+                (void) printf("\nTipo: Pasta\n");
+              else
+                (void) printf("\nTipo: Arquivo\n");
+
+              stat(dp->d_name, &filestat);
+              (void) printf("Tamanho: %d bytes\n", filestat.st_size);
+              (void) printf("Modo: %d\n", filestat.st_mode);
+              (void) printf("Numero de blocos: %d\n", filestat.st_blocks);
+              (void) printf("Tamanho do em disco: %d\n", filestat.st_blocks*512);
               (void) closedir(dirpont);
               return 1;
             }else{
@@ -38,9 +53,9 @@ static int pesquisa(const char *arg, const char *caminho){
     } while (dp != NULL);
 
     if (errno != 0)
-        perror("Erro lendo o diretorio\n\n");
+        perror("\nErro lendo o diretorio\n\n");
     else
-        (void) printf("Falha ao procurar: %s\n", arg);
+        (void) printf("\nFalha ao procurar: %s\n", arg);
     (void) closedir(dirpont);
     return 0;
 }
